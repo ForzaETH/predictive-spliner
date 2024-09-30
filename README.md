@@ -1,5 +1,5 @@
 # Predictive Spliner
-The ps_planner package together with the opponent_trajectory package in the perception folder contains most of the files to run *predictive spliner*.
+The predictive_spliner package together with the opponent_trajectory package in the perception folder contains most of the files to run *predictive spliner*.
 To run *predictive spliner* during head-to-head racing, run:
 ```
 roslaunch stack_master headtohead.launch LU_table:=SIM_linear overtake_mode:=predictive_spliner solver:=sqp od_mode:=banana GP_trajectory:=gp_predictive

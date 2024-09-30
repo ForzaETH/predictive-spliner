@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rospy
 from dynamic_reconfigure.server import Server
-from ps_planner.cfg import dyn_sqp_tunerConfig
+from predictive_spliner.cfg import dyn_sqp_tunerConfig
 
 def callback(config, level):
     config.evasion_dist = round(config.evasion_dist, 2)
