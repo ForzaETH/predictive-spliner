@@ -1,2 +1,2 @@
 # predictive-spliner
-Predictive Spliner planner for the ForzaETH race stack
+Predictive Spliner planner for the ForzaETH race stack.
