@@ -193,7 +193,7 @@ class SQPAvoidanceNode:
         rospy.wait_for_message("/car_state/odom", Odometry)
         rospy.wait_for_message("/dynamic_sqp_tuner_node/parameter_updates", Config)
         rospy.wait_for_message("/local_waypoints",WpntArray)
-        rospy.loginfo("[OBS Spliner] Ready!")
+        rospy.loginfo("[OBS PSpliner] Ready!")
 
         while not rospy.is_shutdown():
             # TODO: Side of overtsake still based on more_space function???
@@ -339,8 +339,8 @@ class SQPAvoidanceNode:
 
 
             else:
-                rospy.loginfo("[OBS Spliner] Obstacle end index is smaller than start index")
-                rospy.loginfo("[OBS Spliner] len obs: " + str(len(considered_obs)) + "obs_start:" + str(obs.s_start) + "obs_end:" + str(obs.s_end) + " obs_idx_start: " + str(obs_idx_start) + " obs_idx_end: " + str(obs_idx_end) + " len s_avoidance: " + str(len(s_avoidance)) + "s avoidance 0:" + str(s_avoidance[0]) + " s avoidance -1: " + str(s_avoidance[-1]))    
+                rospy.loginfo("[OBS PSpliner] Obstacle end index is smaller than start index")
+                rospy.loginfo("[OBS PSpliner] len obs: " + str(len(considered_obs)) + "obs_start:" + str(obs.s_start) + "obs_end:" + str(obs.s_end) + " obs_idx_start: " + str(obs_idx_start) + " obs_idx_end: " + str(obs_idx_end) + " len s_avoidance: " + str(len(s_avoidance)) + "s avoidance 0:" + str(s_avoidance[0]) + " s avoidance -1: " + str(s_avoidance[-1]))    
 
     
         self.obs_downsampled_indices = self.obs_downsampled_indices.astype(int)
@@ -397,7 +397,7 @@ class SQPAvoidanceNode:
                 self.last_ot_side = "left"
             else:
                 self.last_ot_side = "right"
-            # print("[OBS Spliner] SQP solver successfull")
+            # print("[OBS PSpliner] SQP solver successfull")
 
         else:
             evasion_x = []
