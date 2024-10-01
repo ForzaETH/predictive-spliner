@@ -168,8 +168,6 @@ class GaussianProcessOppTraj(object):
                 s_pred.append(ego_s_doublelap[i])
                 
 
-        start_time = time.time()
-
         def optimizer_wrapper(obj_func, initial_theta, bounds):
             solution, function_value, _ = fmin_l_bfgs_b(obj_func, initial_theta, bounds=bounds)
             return solution, function_value
@@ -186,9 +184,6 @@ class GaussianProcessOppTraj(object):
         # Make predictions using the GPR model
         d_pred, sigma_d = gpr_d.predict(s_pred_reshape, return_std=True)
         
-        end_time = time.time()
-        time_taken = end_time - start_time
-
         resampled_opponent_d = d_pred
         #resampled_opponent_vs = np.interp(s_pred, opponent_s_sorted, opponent_vs_sorted)
         resampled_opponent_vd = np.interp(s_pred, opponent_s_sorted, opponent_vd_sorted)

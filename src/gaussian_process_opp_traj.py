@@ -203,7 +203,7 @@ class GaussianProcessOppTraj(object):
         return sorted_detection_list, around_origin
     
 
-    def get_sorted_s_d_vs_vd_lists(self, sorted_detection_list:list): #currently not using the variances
+    def get_sorted_s_d_vs_vd_lists(self, sorted_detection_list:list): 
 
         """Sort the opponent trajectory based on the s position and return the sorted lists"""
 
@@ -211,21 +211,17 @@ class GaussianProcessOppTraj(object):
         opponent_d_sorted = [detection.d for detection in sorted_detection_list]
         opponent_vs_sorted = [detection.vs for detection in sorted_detection_list]
         opponent_vd_sorted = [detection.vd for detection in sorted_detection_list]
-        # opponent_time_sorted = sorted_detection_list[:].time
-        # opponent_s_var_sorted = sorted_detection_list[:].s_var
-        # opponent_d_var_sorted = sorted_detection_list[:].d_var
-        # opponent_vs_var_sorted = sorted_detection_list[:].vs_var
-        # opponent_vd_var_sorted = sorted_detection_list[:].vd_var
         
 
-        return opponent_s_sorted, opponent_d_sorted,opponent_vs_sorted, opponent_vd_sorted #, opponent_time_sorted, opponent_s_var_sorted, opponent_d_var_sorted, opponent_vs_var_sorted, opponent_vd_var_sorted
+        return opponent_s_sorted, opponent_d_sorted,opponent_vs_sorted, opponent_vd_sorted
     
     def get_opponnent_wpnts(self,whole_lap: bool, ego_s_sorted: list, opponent_s_sorted: list, opponent_d_sorted: list, opponent_vs_sorted: list, opponent_vd_sorted: list, arond_origin: bool, oppwpnts_list: list):
 
         """Resample the opponent trajectory based on the ego vehicle's s position and return the resampled opponent trajectory (aso return the resampled opponent trajectory as a marker array)"""
         ego_s_sorted_copy = ego_s_sorted.copy()
 
-        ##split self.opp_positions_in_map_frenet in a s/s/vs/vd list #testing with Rosbag
+        #testing with Rosbag
+        #split self.opp_positions_in_map_frenet in a s/s/vs/vd list 
         # opp_s = [position[0] for position in self.opp_positions_in_map_frenet]
         # opp_d = [position[1] for position in self.opp_positions_in_map_frenet]
         # opp_vs = [position[2] for position in self.opp_positions_in_map_frenet]
@@ -233,7 +229,6 @@ class GaussianProcessOppTraj(object):
         if whole_lap:
             
             #Predict the d coordinate with CCMA in case of a whole lap
-            start_time1 = time.time()
             #stretch the s and d list to ensure that the CCMA works smoothly around the origin
             opp_s_copy = opponent_s_sorted.copy()
             opp_d_copy = opponent_d_sorted.copy()
@@ -248,9 +243,6 @@ class GaussianProcessOppTraj(object):
             #smooth the trajectory with CCMA
             ccma = CCMA(w_ma=5, w_cc=3)
             smoothed_xy_points = ccma.filter(noisy_xy_points)
-            end_time1 = time.time()
-            time_taken1 = end_time1 - start_time1
-            #print(f"CCMA took {time_taken1} seconds")
 
             #convert back to frenet
             smoothed_sd_points = self.converter.get_frenet(smoothed_xy_points[:, 0], smoothed_xy_points[:, 1])
@@ -335,12 +327,11 @@ class GaussianProcessOppTraj(object):
         opponent_vs_sorted_reshape = train_vs.reshape(-1, 1)
         opponent_vd_sorted_reshape = train_vd.reshape(-1, 1)
 
-        # Define a range of s values for prediction
+        #Define a range of s values for prediction
         ego_s_sorted_nparray = np.array(ego_s_sorted_copy)
         s_pred = ego_s_sorted_nparray.reshape(-1, 1)
 
-        # # Fit the Gaussian Process Regressor to the data
-        start_time = time.time()
+        #Fit the Gaussian Process Regressor to the data
         def optimizer_wrapper(obj_func, initial_theta, bounds):
             solution, function_value, _ = fmin_l_bfgs_b(obj_func, initial_theta, bounds=bounds)
             return solution, function_value
@@ -350,18 +341,11 @@ class GaussianProcessOppTraj(object):
         gpr_vs.fit(opponent_s_sorted_reshape, opponent_vs_sorted_reshape)
         vs_pred, sigma_vs = gpr_vs.predict(s_pred, return_std=True)
         
-        # if not already predicted with CCMA fit D with GP
+        #if not already predicted with CCMA fit D with GP
         if not whole_lap:
             gpr_d = GaussianProcessRegressor(kernel=self.kernel_d, optimizer=optimizer_wrapper)
             gpr_d.fit(opponent_s_sorted_reshape, opponent_d_sorted_reshape)
             d_pred_GP, sigma_d = gpr_d.predict(s_pred, return_std=True)
-
-
-
-        end_time = time.time()
-        # Calculate and print the time taken
-        time_taken = end_time - start_time
-        #print(f"Gaussian Process took {time_taken} seconds")
 
         #shorten the copy lists (that was changed) to the length of the original ego_s
         if whole_lap:
@@ -370,12 +354,10 @@ class GaussianProcessOppTraj(object):
                 if ego_s_sorted_copy[i-n] >= self.track_length or ego_s_sorted_copy[i-n] < 0:
                     ego_s_sorted_copy.pop(i-n)
                     if not whole_lap: #(CCMA)
-                    #if True:
                         d_pred_GP = np.delete(d_pred_GP, i-n)
                     vs_pred = np.delete(vs_pred, i-n) 
                     n+=1
-        # Linear
-        #resampled_opponent_d = np.interp(ego_s_sorted, opponent_s_sorted, opponent_d_sorted)
+
         if whole_lap: #(CCMA)
         #if False:
             resampled_opponent_d = d_pred_CCMA
@@ -393,8 +375,6 @@ class GaussianProcessOppTraj(object):
         resampled_wpnts_xy = self.converter.get_cartesian(ego_s , resampled_opponent_d.tolist())
         
         # replace all the entries where there is a corresponding ego_s with the interpolated values
-        # Convert ego_s to a set for faster lookup
-        ego_s_set = set(ego_s) 
         i=0
 
         for i in range(len(oppwpnts_list)):
