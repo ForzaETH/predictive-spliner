@@ -273,8 +273,6 @@ class SQPAvoidanceNode:
             if obs.d_left > 3 or obs.d_right < -3:
                 danger_flag = True
 
-        
-
         # Get local waypoints to check where we are and where we are heading
         # If we are closer than threshold to the opponent use the first two local waypoints as start points
         start_avoidance = max((min_s_obs_start - self.back_to_raceline_before), cur_s)
