@@ -22,13 +22,7 @@ class CollisionPredictor:
         rospy.init_node('collision_predictor', anonymous=True)
 
         # ROS Parameters
-        GP_trajectory = rospy.get_param("GP_trajectory", 'false')
-        if GP_trajectory == 'false' or GP_trajectory == 'False' or GP_trajectory == False:
-            # To access ground truth in the simulator
-            self.opponent_traj_topic = '/opponent_waypoints'
-        else:
-            # To access the GP trajectory
-            self.opponent_traj_topic = '/opponent_trajectory'
+        self.opponent_traj_topic = '/opponent_trajectory'
         
 
         # Subscriber

@@ -407,7 +407,7 @@ class Opponent_Trajectory:
             # around the origin
             elif diff_s < 0 and abs(diff_s) > self.treshold:
                 diff_s = diff_s % track_length
-                if len(proj_opponent_traj.detections) > 0: #TODO weird fix dont know why this is a problem
+                if len(proj_opponent_traj.detections) > 0: 
                     opp_vs = proj_opponent_traj.detections[-1].vs #do this since track_length is not very accurate (could also ignore this point)
                 else:
                     discard_flag = True

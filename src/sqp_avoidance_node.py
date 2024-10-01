@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import minimize
 from frenet_converter.frenet_converter import FrenetConverter
 from std_msgs.msg import Bool
-
+from copy import deepcopy
 
 class SQPAvoidanceNode:
     """
@@ -82,13 +82,8 @@ class SQPAvoidanceNode:
         self.global_traj_kappas = None
 
         # ROS Parameters
-        GP_trajectory = rospy.get_param("GP_trajectory", 'false')
-        if GP_trajectory == 'false' or GP_trajectory == 'False' or GP_trajectory == False:
-            self.opponent_traj_topic = '/opponent_waypoints'
-        else:
-            self.opponent_traj_topic = '/opponent_trajectory'
+        self.opponent_traj_topic = '/opponent_trajectory'
         self.measure = rospy.get_param("/measure", False)
-        
 
         # Dynamic reconf params
         self.avoid_static_obs = True
@@ -188,17 +183,16 @@ class SQPAvoidanceNode:
 
     def loop(self):
         # Wait for critical Messages and services
-        rospy.loginfo("[OBS Avoidance] Waiting for messages and services...")
+        rospy.loginfo("[OBS Spliner] Waiting for messages and services...")
         rospy.wait_for_message("/global_waypoints_scaled", WpntArray)
         rospy.wait_for_message("/car_state/odom", Odometry)
         rospy.wait_for_message("/dynamic_sqp_tuner_node/parameter_updates", Config)
         rospy.wait_for_message("/local_waypoints",WpntArray)
-        rospy.loginfo("[OBS PSpliner] Ready!")
+        rospy.loginfo("[OBS Spliner] Ready!")
 
         while not rospy.is_shutdown():
-            # TODO: Side of overtsake still based on more_space function???
             start_time = time.perf_counter()
-            obs = self.obs
+            obs = deepcopy(self.obs)
             mrks = MarkerArray()
             frenet_state = self.frenet_state
             self.current_d = frenet_state.pose.pose.position.y
@@ -209,21 +203,13 @@ class SQPAvoidanceNode:
             considered_obs = []
             for obs in obs.obstacles:               
                 if abs(obs.d_center) < self.obs_traj_tresh and (obs.s_start - self.cur_s) % self.scaled_max_s < self.lookahead:
-                    # TODO: Should we keep this saftey hack? I do not know if it is really necessary...
-                    # Increase obstacle width by evasion distance to be safer
-                    obs.s_start = (obs.s_start - self.evasion_dist)
-                    obs.s_end = (obs.s_end + 2 * self.evasion_dist)
                     considered_obs.append(obs)
-                    
-            # Make sure we get a overtake path if we have a prediction and would ignore it
-            if considered_obs == [] and self.obs_predict.obstacles != []:
-                considered_obs = [self.obs_predict.obstacles[0]]
             
             # If there is an obstacle and we are in OT section
             if len(considered_obs) > 0 and self.ot_section_check == True:             
                 evasion_x, evasion_y, evasion_s, evasion_d, evasion_v = self.sqp_solver(considered_obs, frenet_state.pose.pose.position.x)
                 # Publish merge reagion if evasion track has been found
-                if evasion_s != []:
+                if len(evasion_s) > 0:
                     self.merger_pub.publish(Float32MultiArray(data=[considered_obs[-1].s_end%self.scaled_max_s, evasion_s[-1]%self.scaled_max_s]))
 
             # IF there is no point in overtaking anymore delte all markers
@@ -309,8 +295,6 @@ class SQPAvoidanceNode:
         self.obs_downsampled_indices = np.array([])
         self.obs_downsampled_center_d = np.array([])
         self.obs_downsampled_min_dist = np.array([])
-        obs_downsampled_left = np.array([])
-        obs_downsampled_right = np.array([])
 
         for obs in considered_obs:
             obs_idx_start = np.abs(s_avoidance - obs.s_start).argmin()
@@ -323,9 +307,6 @@ class SQPAvoidanceNode:
                     self.obs_downsampled_indices = np.append(self.obs_downsampled_indices, np.arange(obs_idx_start, obs_idx_end + 1))
                     self.obs_downsampled_center_d = np.append(self.obs_downsampled_center_d, np.full(obs_idx_end - obs_idx_start + 1, (obs.d_left + obs.d_right) / 2))
                     self.obs_downsampled_min_dist = np.append(self.obs_downsampled_min_dist, np.full(obs_idx_end - obs_idx_start + 1, (obs.d_left - obs.d_right) / 2 + self.width_car + self.evasion_dist))
-                    # Just for vizualisation
-                    obs_downsampled_left = np.append(obs_downsampled_left, np.full(obs_idx_end - obs_idx_start + 1, obs.d_left))
-                    obs_downsampled_right = np.append(obs_downsampled_right, np.full(obs_idx_end - obs_idx_start + 1, obs.d_right))
                 else:
                     indices = np.arange(obs_idx_start, obs_idx_end + 1)
                     self.obs_downsampled_indices = np.append(self.obs_downsampled_indices, indices)
@@ -333,14 +314,9 @@ class SQPAvoidanceNode:
                     d_opp_downsampled_array = np.array([self.opponent_waypoints[opp_idx].d_m for opp_idx in opp_wpnts_idx])                    
                     self.obs_downsampled_center_d = np.append(self.obs_downsampled_center_d, d_opp_downsampled_array)
                     self.obs_downsampled_min_dist = np.append(self.obs_downsampled_min_dist, np.full(obs_idx_end - obs_idx_start + 1, self.width_car + self.evasion_dist))
-                    # Just for viz
-                    obs_downsampled_left = np.append(obs_downsampled_left, d_opp_downsampled_array + (self.width_car + self.evasion_dist))
-                    obs_downsampled_right = np.append(obs_downsampled_right, d_opp_downsampled_array - (self.width_car + self.evasion_dist))
-
-
             else:
-                rospy.loginfo("[OBS PSpliner] Obstacle end index is smaller than start index")
-                rospy.loginfo("[OBS PSpliner] len obs: " + str(len(considered_obs)) + "obs_start:" + str(obs.s_start) + "obs_end:" + str(obs.s_end) + " obs_idx_start: " + str(obs_idx_start) + " obs_idx_end: " + str(obs_idx_end) + " len s_avoidance: " + str(len(s_avoidance)) + "s avoidance 0:" + str(s_avoidance[0]) + " s avoidance -1: " + str(s_avoidance[-1]))    
+                rospy.loginfo("[OBS Spliner] Obstacle end index is smaller than start index")
+                rospy.loginfo("[OBS Spliner] len obs: " + str(len(considered_obs)) + "obs_start:" + str(obs.s_start) + "obs_end:" + str(obs.s_end) + " obs_idx_start: " + str(obs_idx_start) + " obs_idx_end: " + str(obs_idx_end) + " len s_avoidance: " + str(len(s_avoidance)) + "s avoidance 0:" + str(s_avoidance[0]) + " s avoidance -1: " + str(s_avoidance[-1]))    
 
     
         self.obs_downsampled_indices = self.obs_downsampled_indices.astype(int)
@@ -354,10 +330,10 @@ class SQPAvoidanceNode:
         self.min_radius = np.interp(radius_speed, [1, 6, 7], [0.2, 2, 4])
         self.max_kappa = 1/self.min_radius
 
-        if self.past_avoidance_d == []:
+        if len(self.past_avoidance_d) == 0:
             initial_guess = np.full(len(s_avoidance), initial_apex)
 
-        elif self.past_avoidance_d != []:
+        elif len(self.past_avoidance_d) > 0:
             initial_guess = self.past_avoidance_d
         else:
             #TODO: Remove -> print("this happend")
@@ -367,9 +343,9 @@ class SQPAvoidanceNode:
                 initial_guess = np.full(len(s_avoidance), -2)
             
         result = self.solve_sqp(initial_guess, bounds)
-
-        if len(self.obs_downsampled_indices) < 2 or danger_flag == True:
-            result.success = False
+    
+        # if len(self.obs_downsampled_indices) < 2 or danger_flag == True:
+        #     result.success = False
 
         if result.success == True:
             # Create a new s array for the global waypoints as close to delta s as possible
@@ -397,7 +373,7 @@ class SQPAvoidanceNode:
                 self.last_ot_side = "left"
             else:
                 self.last_ot_side = "right"
-            # print("[OBS PSpliner] SQP solver successfull")
+            # print("[OBS Spliner] SQP solver successfull")
 
         else:
             evasion_x = []
@@ -410,43 +386,7 @@ class SQPAvoidanceNode:
             self.past_avoidance_d = []
         
         self.evasion_pub.publish(evasion_wpnts_msg)
-        self.visualize_sqp(evasion_s, evasion_d, evasion_x, evasion_y, evasion_v)
-
-        ### DEBUG VISUALIZATION ###
-        if False and result.success == True:
-            plt.figure(figsize=(8, 6))
-            # Plot boundaries
-            plt.plot(s_avoidance, bounds[:,0] - 0.2, 'k--', label='Track Boundaries')
-            plt.plot(s_avoidance, bounds[:,1] + 0.2, 'k--')
-
-            # Plot obstacle
-            plt.plot(s_avoidance[self.obs_downsampled_indices], self.obs_downsampled_center_d, 'yo', label='Opponent trajectory')
- 
-            # Highlight constrained region
-            plot_distance_left = obs_downsampled_left - self.evasion_dist
-            plot_distance_right = obs_downsampled_right + self.evasion_dist
-          # Plot the initial RoC (all but the last three elements)
-            plt.fill_between(s_avoidance[self.obs_downsampled_indices[:-2]], 
-                 plot_distance_left[:-2], 
-                 plot_distance_right[:-2], 
-                 color='gray', alpha=0.7, label='Initial RoC')
-
-            # Plot the inflated RoC (last three elements)
-           
-            plt.fill_between(s_avoidance[self.obs_downsampled_indices[-3:]], 
-                 plot_distance_left[-3:], 
-                 plot_distance_right[-3:], 
-                 color='gray', alpha=0.5, label='Inflated RoC')
-            # Plot initial guess
-            plt.plot(s_avoidance, initial_guess, 'o', label='Initial Guess', color='blue')
-            # Plot raceline
-            plt.plot(s_avoidance, result.x, 'o', label='Overtake Trajectory', color='purple')
-            # Plot current position
-            plt.plot(cur_s, self.current_d, 'x', label='Current Position', color='black')
-
-            plt.legend()
-            plt.grid()
-            plt.show()   
+        self.visualize_sqp(evasion_s, evasion_d, evasion_x, evasion_y, evasion_v) 
 
         return evasion_x, evasion_y, evasion_s, evasion_d, evasion_v
 
@@ -572,7 +512,7 @@ class SQPAvoidanceNode:
     ### Visualize SQP Rviz###
     def visualize_sqp(self, evasion_s, evasion_d, evasion_x, evasion_y, evasion_v):
         mrks = MarkerArray()
-        if evasion_s == []:
+        if len(evasion_s) == 0:
             pass
         else:
             resp = self.converter.get_cartesian(evasion_s, evasion_d)
