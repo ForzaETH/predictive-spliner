@@ -1,19 +1,46 @@
-# Predictive Spliner
-The predictive_spliner package together with the opponent_trajectory package in the perception folder contains most of the files to run *predictive spliner*.
-To run *predictive spliner* during head-to-head racing, run:
+# Predictive Spliner: Data-Driven Overtaking in Autonomous Racing
+<img src="./misc/intro_fig.png" alt="GA" style="width: 100%;"/>
+
+Predictive Spliner is a data-driven overtaking planner for autonomous racing, leveraging opponent trajectory prediction through Gaussian Process (GP) regression. The algorithm computes effective overtaking maneuvers while considering both spatial and temporal information, enhancing performance and safety during head-to-head races.
+
+## Key Features
+- **Data-Driven Approach:** Learns opponent behavior and predicts future trajectories for safe overtaking.
+- **High Performance:** Achieves up to 83.1% of its own speed during overtaking with an average success rate of 84.5%.
+- **Experimental Validation:** Tested on a 1:10 scale autonomous racing platform with a robust comparison to state-of-the-art algorithms.
+
+## Installation
+The predictive spliner planner is part of the [ForzaETH Race Stack](https://github.com/ForzaETH/race_stack). Please refer to the [installation guide](https://github.com/ForzaETH/race_stack/blob/main/INSTALLATION.md) for detailed instructions and perform the quickstart guide below to run the planner.
+
+# Quickstart Guide
+This is how to run the predictive spliner planner with the headtohead node in the base simulator. The same steps can be followed analogously to run the planner on the physical robot.
+
+Start a roscore:
+```bash
+roscore
 ```
-roslaunch stack_master headtohead.launch LU_table:=SIM_linear overtake_mode:=predictive_spliner solver:=sqp od_mode:=banana GP_trajectory:=gp_predictive
+Launch the base simulator with the desired map and sim true:
+```bash
+roslaunch stack_master base_system.launch sim:=True racecar_version:=SIM map_name:=f
 ```
-For *predictive spliner*, there are two different solver options: `sqp` and `spliner`. `sqp` utilizes dynamic programming techniques to generate an overtaking trajectory, while `spliner` works similarly to *spliner*, only with an enlarged region of collision. The default and recommended solver setting is `sqp`.
+Launch headtohead with the predictive_spliner as planner. Note: that perception is set to `False` due to the simulated opponent not providing any perception data, hence set it to `True` when testing on the physical robot:
+```bash
+roslaunch stack_master headtohead.launch perception:=False planner:=predictive_spliner
+```
+Launch a dummy obstacle publisher:
+```bash
+roslaunch obstacle_publisher obstacle_publisher.launch speed_scaler:=0.3
+```
+Start `rqt` and enable the overtaking sectors:
+```bash
+rqt
+```
 
-In simulation, `GP_trajectory` can be set to `false`. This will use the ground truth of the opponents trajectory published by the *obstacle publisher node*.
-In head_to_head mode set `GP_trajectory` to `gp_predictive` to utilize the predicted opponent raceline trajectory.
-To utilize websocket functionalities, launch car to car sync to stran over the data from the opponent to the ego car and set `GP_trajectory` to `websocket`.
-
-### RQT Parameters
-The default settings work fine for a somewhat consistent opponent. If the opponent drives more unpredictably, the `save_distance_front`, `save_distance_back`, and `evasion_dist` should be increased. If the computational time for the waypoint generation is too slow, the `avoidance resolution` can be decreased. It is recommended to choose a value higher or equal to 18. By default, `avoid static` obstacles is deactivated. Activate it if there is a chance of static obstacles appearing on the track.
-
-### Spliner Remark
-The `spline_ttl` parameter has been changed to 0.2; the default value for "normal" *spliner* is 2. If you use "normal" spliner, you need to change this value back to 2, so that *spliner* can function properly.
+Refer to this video to see the quickstart in action: [Quickstart Video](https://drive.google.com/file/d/1LsW0w8d9_j87QMiO1_ByDNJKnnVSB6d2/view?usp=sharing)
 
 
+## Citing ForzaETH Race Stack
+
+If you found our race stack helpful in your research, we would appreciate if you cite it as follows:
+```
+insert bibtex here
+```
