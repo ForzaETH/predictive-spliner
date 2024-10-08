@@ -1,7 +1,11 @@
 # Predictive Spliner: Data-Driven Overtaking in Autonomous Racing
-<img src="./misc/intro_fig.png" alt="GA" style="width: 100%;"/>
+<a href="http://arxiv.org/abs/2410.04868">
+    <img src="https://img.shields.io/badge/arXiv.org-2410.04868-b31b1b" alt="arXiv e-print Badge">
+</a>
 
-Predictive Spliner is a data-driven overtaking planner for autonomous racing, leveraging opponent trajectory prediction through Gaussian Process (GP) regression. The algorithm computes effective overtaking maneuvers while considering both spatial and temporal information, enhancing performance and safety during head-to-head races.
+Predictive Spliner is a data-driven overtaking planner for autonomous racing, leveraging opponent trajectory prediction through Gaussian Process (GP) regression. The algorithm computes effective overtaking maneuvers while considering both spatial and temporal information, enhancing performance and safety during head-to-head races. Check out our preprint [Predictive Spliner: Data-Driven Overtaking in Autonomous Racing](http://arxiv.org/abs/2410.04868) on ArXiv for more information. Or check out our explanatory [Youtube video](https://www.youtube.com/watch?v=Zqd-OcUf77k).
+
+<img src="./misc/intro_fig.png" alt="GA" style="width: 100%;"/>
 
 ## Key Features
 - **Data-Driven Approach:** Learns opponent behavior and predicts future trajectories for safe overtaking.
