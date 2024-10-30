@@ -46,5 +46,13 @@ Refer to this video to see the quickstart in action: [Quickstart Video](https://
 
 If you found our race stack helpful in your research, we would appreciate if you cite it as follows:
 ```
-insert bibtex here
+@misc{baumann2024predictivesplinerdatadrivenovertaking,
+      title={Predictive Spliner: Data-Driven Overtaking in Autonomous Racing Using Opponent Trajectory Prediction}, 
+      author={Nicolas Baumann and Edoardo Ghignone and Cheng Hu and Benedict Hildisch and Tino Hämmerle and Alessandro Bettoni and Andrea Carron and Lei Xie and Michele Magno},
+      year={2024},
+      eprint={2410.04868},
+      archivePrefix={arXiv},
+      primaryClass={cs.RO},
+      url={https://arxiv.org/abs/2410.04868}, 
+}
 ```
