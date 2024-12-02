@@ -44,7 +44,7 @@ Refer to this video to see the quickstart in action: [Quickstart Video](https://
 
 ## Citing Predictive Spliner
 
-If you found our race stack helpful in your research, we would appreciate if you cite it as follows:
+If you found our stack helpful in your research, we would appreciate if you cite it as follows:
 ```
 @misc{baumann2024predictivesplinerdatadrivenovertaking,
       title={Predictive Spliner: Data-Driven Overtaking in Autonomous Racing Using Opponent Trajectory Prediction}, 
