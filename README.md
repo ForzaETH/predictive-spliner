@@ -42,7 +42,7 @@ rqt
 Refer to this video to see the quickstart in action: [Quickstart Video](https://drive.google.com/file/d/1LsW0w8d9_j87QMiO1_ByDNJKnnVSB6d2/view?usp=sharing)
 
 
-## Citing ForzaETH Race Stack
+## Citing Predictive Spliner
 
 If you found our race stack helpful in your research, we would appreciate if you cite it as follows:
 ```
